@@ -79,6 +79,12 @@ export class KolaSimulator {
     return this.run(holder, (c) => this.contract.impureCircuits.proveReturning(c, appId, today));
   }
 
+  /** Call any impure circuit by name with a given private state (used to check the on-chain story offline). */
+  call(ps: KolaPrivateState, circuit: keyof Contract<KolaPrivateState>['impureCircuits'], ...args: unknown[]): unknown {
+    const f = this.contract.impureCircuits[circuit] as unknown as (c: CircuitContext<KolaPrivateState>, ...a: unknown[]) => CircuitResults<KolaPrivateState, unknown>;
+    return this.run(ps, (c) => f(c, ...args));
+  }
+
   /** Full proof transcript of a call, for inspecting exactly what becomes public. */
   proveForAppTranscript(holder: KolaPrivateState, appId: Uint8Array, today: bigint) {
     const ctx = createCircuitContext<KolaPrivateState>(this.address, COIN_PK, this.state, holder, undefined, undefined, this.blockTime);

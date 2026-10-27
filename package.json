@@ -9,18 +9,45 @@
     "compile": "compact compile contracts/src/kola-id.compact contracts/managed/kola-id",
     "compile:fast": "compact compile --skip-zk contracts/src/kola-id.compact contracts/managed/kola-id",
     "test": "vitest run",
-    "demo:dev": "vite apps/demo",
-    "demo:build": "vite build apps/demo",
-    "typecheck": "tsc -p tsconfig.json"
+    "demo:dev": "npm run demo:zk && vite apps/demo",
+    "demo:build": "npm run demo:zk && vite build apps/demo",
+    "typecheck": "tsc -p tsconfig.json",
+    "preview:wallet": "tsx deploy/wallet-info.ts",
+    "preview:deploy": "tsx deploy/deploy.ts",
+    "demo:zk": "node -e \"const fs=require('fs');const d='apps/demo/public/zk';fs.rmSync(d,{recursive:true,force:true});for(const s of ['keys','zkir'])fs.cpSync('contracts/managed/kola-id/'+s,d+'/'+s,{recursive:true})\""
   },
   "dependencies": {
-    "@midnight-ntwrk/compact-runtime": "0.16.0"
+    "@midnight-ntwrk/compact-runtime": "0.16.0",
+    "@midnight-ntwrk/dapp-connector-api": "4.0.1",
+    "@midnight-ntwrk/midnight-js-contracts": "4.1.1",
+    "@midnight-ntwrk/midnight-js-dapp-connector-proof-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-fetch-zk-config-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-level-private-state-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-network-id": "4.1.1",
+    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-protocol": "4.1.1",
+    "@midnight-ntwrk/midnight-js-types": "4.1.1",
+    "@midnight-ntwrk/midnight-js-utils": "4.1.1",
+    "@midnightntwrk/wallet-sdk": "1.2.0",
+    "@scure/bip39": "2.4.0",
+    "events": "^3.3.0",
+    "rxjs": "7.8.2",
+    "superjson": "^2.2.6"
   },
   "devDependencies": {
+    "@types/node": "24.10.1",
+    "tsx": "4.23.12",
     "typescript": "^5.6.3",
     "vite": "^5.4.21",
-    "vite-plugin-top-level-await": "^1.6.0",
     "vite-plugin-wasm": "^3.6.0",
     "vitest": "^2.1.9"
+  },
+  "overrides": {
+    "@midnight-ntwrk/onchain-runtime-v3": "3.0.0"
+  },
+  "engines": {
+    "node": ">=20 (Node 22.12+ for preview:* scripts)"
   }
 }

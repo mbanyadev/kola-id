@@ -6,8 +6,20 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "lib": ["ES2022", "DOM"],
-    "types": []
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "types": [
+      "node"
+    ],
+    "resolveJsonModule": true
   },
-  "include": ["sdk/src", "tests", "apps/demo/src", "apps/demo/vite.config.ts"]
+  "include": [
+    "sdk/src",
+    "tests",
+    "apps/demo/src",
+    "apps/demo/vite.config.ts",
+    "deploy"
+  ]
 }

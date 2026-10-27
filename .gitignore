@@ -47,3 +47,9 @@ SUBMISSION.md
 DECK_OUTLINE.md
 VIDEO_PLAN.md
 docs/name-check.md
+
+# Preview wallet, private state and deploy secrets (never commit)
+private/
+*.mnemonic
+wallet-state-*
+apps/demo/public/zk/

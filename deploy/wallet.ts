@@ -64,8 +64,11 @@ export const submitWithRetry = async (wallet: WalletFacade, tx: FinalizedTransac
   }
 };
 
-/** Log sync progress every 30 s until the wallet is synced (a fresh Preview wallet can take a while). */
-export const logSyncProgress = (wallet: WalletFacade): (() => void) => {
+/**
+ * Log sync progress every 30 s until the wallet is synced (a fresh wallet can take a long while on Preprod),
+ * and, when a state file is given, checkpoint the wallet state every 2 minutes so an interrupted sync resumes.
+ */
+export const logSyncProgress = (wallet: WalletFacade, checkpointFile?: string): (() => void) => {
   const fmt = (p: unknown) =>
     p && typeof p === 'object'
       ? JSON.stringify(p, (_k, v) => (typeof v === 'bigint' ? v.toString() : v))
@@ -76,5 +79,13 @@ export const logSyncProgress = (wallet: WalletFacade): (() => void) => {
     if (last.isSynced) return;
     console.log(`[sync ${new Date().toISOString().slice(11, 19)}] shielded ${fmt(last.shielded?.progress)} | unshielded ${fmt(last.unshielded?.progress)} | dust ${fmt(last.dust?.progress)}`);
   }, 30_000);
-  return () => { clearInterval(t); sub.unsubscribe(); };
+  let saving = false;
+  const c = checkpointFile
+    ? setInterval(() => {
+        if (saving || last.isSynced) return;
+        saving = true;
+        saveWalletState(wallet, checkpointFile).catch((e: Error) => console.warn(`Checkpoint failed: ${e.message}`)).finally(() => (saving = false));
+      }, 120_000)
+    : undefined;
+  return () => { clearInterval(t); if (c) clearInterval(c); sub.unsubscribe(); };
 };

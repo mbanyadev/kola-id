@@ -1,1 +1,77 @@
-{"network":"preprod","steps":{}}
+{
+  "network": "preprod",
+  "steps": {
+    "add-issuer": {
+      "label": "Admin approves Kumba Verify",
+      "ok": true,
+      "txId": "00bd4c08d5b5ce72d0e3a21f4592f7973f5751cff3edc21aa11b796534ad7fbe0b",
+      "block": 3163568,
+      "at": "2026-10-27T15:54:46.401Z"
+    },
+    "issue-manka": {
+      "label": "Kumba Verify issues a credential to Manka",
+      "ok": true,
+      "txId": "0016bc77151661b9adf48fe1c8cb663db9307ee11f7a7b9d8bad7a0edf364da903",
+      "block": 3163572,
+      "at": "2026-10-27T15:55:14.414Z"
+    },
+    "issue-ebai": {
+      "label": "Kumba Verify issues a credential to Ebai",
+      "ok": true,
+      "txId": "0003771772325bbd928c2b9e78e0e466662e6e0005caf2f5c79f0fb9709db77366",
+      "block": 3163576,
+      "at": "2026-10-27T15:55:35.519Z"
+    },
+    "policy-sawa": {
+      "label": "Sawa Exchange publishes its policy (18+, CM/GH/KE/NG, sanctions ≤ 90 days)",
+      "ok": true,
+      "txId": "008cb11eec4fff3910a029d1c5c57b7c204b8488407052c525632ba830b0ffbe55",
+      "block": 3163582,
+      "at": "2026-10-27T15:56:08.309Z"
+    },
+    "policy-ndole": {
+      "label": "Ndole Games publishes its policy (18+)",
+      "ok": true,
+      "txId": "002b7ddede5825f083b332e13855fb6a6eca203fc107295fffbb1c6d8f396fba46",
+      "block": 3163586,
+      "at": "2026-10-27T15:56:37.782Z"
+    },
+    "manka-sawa": {
+      "label": "Manka signs up to Sawa Exchange",
+      "ok": true,
+      "txId": "00ae9410aa1c116b2ab3105f4918e54bd2b746ee58d5e2d48457aa140e339e77ab",
+      "block": 3163590,
+      "at": "2026-10-27T15:56:57.889Z"
+    },
+    "manka-sawa-again": {
+      "label": "Manka tries a second Sawa Exchange account",
+      "ok": false,
+      "refused": "already registered with this app",
+      "at": "2026-10-27T15:57:42.347Z"
+    },
+    "manka-ndole": {
+      "label": "Manka signs up to Ndole Games",
+      "ok": true,
+      "txId": "00a032f1e8b08cffe1d233ce771771ef4749242454205f5fbd1db35f4fd536f427",
+      "block": 3163598,
+      "at": "2026-10-27T15:57:44.139Z"
+    },
+    "ebai-sawa": {
+      "label": "Ebai (17) tries Sawa Exchange",
+      "ok": false,
+      "refused": "too young",
+      "at": "2026-10-27T15:58:09.927Z"
+    },
+    "manka-return": {
+      "label": "Manka logs back in to Sawa Exchange",
+      "ok": true,
+      "txId": "001ccb0845d8f55f156900b7403db681c587a81380b629c49481f72df0893567c3",
+      "block": 3163603,
+      "at": "2026-10-27T15:58:11.575Z"
+    }
+  },
+  "contractAddress": "d79be6ed9ae73874daa10a1e9e3b36f8772a5d7eb7991f18af1b8975c9027be3",
+  "deployTxId": "003042f5229d488f2f1915896067650764fbda927abe812402a5f943fa1345c695",
+  "deployBlock": 3163444,
+  "deployedAt": "2026-10-27T15:42:54.270Z"
+}

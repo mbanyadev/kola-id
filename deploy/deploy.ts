@@ -57,7 +57,7 @@ const { shieldedSecretKeys, dustSecretKey, unshieldedKeystore } = keys;
 const address = unshieldedKeystore.getBech32Address().asString();
 const stateFile = walletStateFile(keys);
 const wallet = await buildWallet(keys, await loadWalletState(stateFile));
-const stopLog = logSyncProgress(wallet);
+const stopLog = logSyncProgress(wallet, stateFile);
 let state = await wallet.waitForSyncedState();
 stopLog();
 await saveWalletState(wallet, stateFile);
@@ -148,7 +148,7 @@ for (const step of CHAIN_STEPS) {
 
 // 5. Read the public ledger back from the indexer
 const cs = await providers.publicDataProvider.queryContractState(addr);
-console.log('Public ledger on Preview:', superjson.stringify(summarizeLedger(ledger(cs!.data))));
+console.log(`Public ledger on ${NETWORK_ID}:`, superjson.stringify(summarizeLedger(ledger(cs!.data))));
 await saveWalletState(wallet, stateFile);
 await wallet.stop();
 process.exit(0);

@@ -13,7 +13,7 @@ if (process.argv.includes('--address-only')) process.exit(0);
 
 const file = walletStateFile(keys);
 const wallet = await buildWallet(keys, await loadWalletState(file));
-const stopLog = logSyncProgress(wallet);
+const stopLog = logSyncProgress(wallet, file);
 const state = await wallet.waitForSyncedState();
 stopLog();
 const night = state.unshielded.balances[unshieldedToken().raw] ?? 0n;

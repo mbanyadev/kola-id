@@ -9,6 +9,7 @@ import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-p
 import { ledger } from '../../../contracts/managed/kola-id/contract/index.js';
 import { summarizeLedger, todayUtc, type DemoCast, type KolaContract, type KolaProviders } from '../../../sdk/src/chain.js';
 import deployment from '../../../deploy/preview-deployment.json';
+import preprodDeployment from '../../../deploy/preprod-deployment.json';
 
 export const NETWORK_ID = 'preview';
 export const INDEXER = 'https://indexer.preview.midnight.network/api/v4/graphql';
@@ -18,6 +19,9 @@ setNetworkId(NETWORK_ID);
 type Dep = { contractAddress?: string; deployTxId?: string; deployBlock?: number; deployedAt?: string;
   steps: Record<string, { label: string; ok: boolean; txId?: string; block?: number; refused?: string }> };
 const ref = deployment as Dep;
+/** Reference deployment on Preprod (made from Node.js; Preprod's indexer is Blockfrost-only, so it is shown, not queried). */
+const preprod = preprodDeployment as Dep;
+const PREPROD_EXPLORER = 'https://preprod.midnightexplorer.com';
 
 type Log = (t: string, kind?: 'ok' | 'bad' | '') => void;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
@@ -57,7 +61,20 @@ export function mount(root: HTMLElement, log: Log, rerender: () => void) {
   const wallets = findWallets();
   const steps = Object.entries(ref.steps ?? {});
   const busy = S.busy ? `<p class="muted">⏳ ${esc(S.busy)}</p>` : '';
+  const ppSteps = Object.entries(preprod.steps ?? {});
+  // The explorer indexes transactions by hash, not by the transaction identifier Midnight.js returns, so link the block.
+  const blockLink = (n?: number) => n ? `<a href="${PREPROD_EXPLORER}/blocks/${n}" target="_blank" rel="noopener">block ${n}</a>` : 'block ?';
+  const txLink = (h?: string) => h ? `<span class="mono">${short(h)}</span>` : '';
   root.innerHTML = `
+    ${preprod.contractAddress ? `<div class="card"><span class="tag">Midnight Preprod · reference deployment</span>
+      <h3>Kola ID is live on Preprod</h3>
+      <p>Contract <a class="mono" href="${PREPROD_EXPLORER}/contracts/${esc(preprod.contractAddress)}" target="_blank" rel="noopener">${esc(preprod.contractAddress)}</a><br>
+        <span class="muted">deployed ${esc(preprod.deployedAt ?? '')} in ${blockLink(preprod.deployBlock)} · tx ${txLink(preprod.deployTxId)}</span></p>
+      ${ppSteps.length ? `<table><tr><th>Story step on Preprod</th><th>Result</th></tr>${ppSteps.map(([, s]) => `<tr><td>${esc(s.label)}</td><td>${s.ok
+        ? `✅ ${blockLink(s.block)} · ${txLink(s.txId)}` : `❌ refused by the proof: ${esc(s.refused ?? '')}`}</td></tr>`).join('')}</table>` : ''}
+      <p class="muted">Deployed from Node.js (<span class="mono">npm run preprod:deploy</span>). Preprod's public indexer is served by Blockfrost and needs a project token, so this page links to the
+        <a href="${PREPROD_EXPLORER}/" target="_blank" rel="noopener">Preprod explorer</a> instead of querying it from your browser.</p>
+    </div>` : ''}
     <div class="card"><span class="tag">Midnight Preview · reference deployment</span>
       ${ref.contractAddress ? `<h3>Kola ID is live on Preview</h3>
         <p>Contract <span class="mono">${ref.contractAddress}</span><br><span class="muted">deployed ${esc(ref.deployedAt ?? '')} in block ${ref.deployBlock ?? '?'} · tx <span class="mono">${short(ref.deployTxId ?? '')}</span></span></p>

@@ -12,12 +12,14 @@ same person.
 
 **Live demo:** https://mbanyadev.github.io/kola-id/ (simulator mode in your browser, plus a **Lace / Preview** mode on the real network; see [Demo](#demo))
 
+**Live on Midnight Preprod:** contract [`d79be6ed9ae7…027be3`](https://preprod.midnightexplorer.com/contracts/d79be6ed9ae73874daa10a1e9e3b36f8772a5d7eb7991f18af1b8975c9027be3), deployed 27 Oct 2026 with the story run on-chain (record in [`deploy/preprod-deployment.json`](deploy/preprod-deployment.json), details in [docs/DEPLOY.md](docs/DEPLOY.md#reference-deployment-on-preprod-27-october-2026))
+
 | | |
 |---|---|
 | Contract | [`contracts/src/kola-id.compact`](contracts/src/kola-id.compact): 7 proving circuits + 6 pure helpers |
 | Toolchain | Compact compiler **0.31.1** (language 0.23), compact-runtime 0.16.0, ledger 8: the versions the [support matrix](https://docs.midnight.network/relnotes/support-matrix) lists for Preview, Preprod and Mainnet |
 | Tests | 32 tests, all passing (`npm test`): 30 contract tests + the on-chain story checked offline |
-| Network | Midnight **Preview**: proof server 8.1.3, Midnight.js 4.1.1, wallet SDK 1.2.0, DApp Connector 4.0.1 |
+| Network | Midnight **Preprod** (reference deployment) and **Preview**: proof server 8.1.3, Midnight.js 4.1.1, wallet SDK 1.2.0, DApp Connector 4.0.1 |
 | License | Apache-2.0 |
 
 ## Why
@@ -98,7 +100,7 @@ holder key, commitment, salt, secret and issuer key never appear in it.
 ```
 contracts/src/kola-id.compact   the contract
 sdk/src/                        witnesses, builders, simulator, Midnight.js glue (chain.ts)
-deploy/                         Preview wallet + deploy script (Node 22), public deployment record
+deploy/                         Preview/Preprod wallet + deploy script (Node 22), public deployment records
 tests/                          Vitest simulator tests
 apps/demo/                      web demo (Vite, no framework), deployed to GitHub Pages
 docs/                           design, 0.31.1 compatibility notes, threat model
@@ -148,12 +150,14 @@ policies, Manka signs up (✅), tries again (❌ already registered), signs up t
 different nullifier), Ebai is rejected (❌ too young), the issuer revokes Manka (❌), re-issues, and she
 logs back in (✅). All names are fictional.
 
-The **Lace / Preview** tab is the same app on the real network. Once published, it shows the reference deployment on Midnight
-Preview (contract address, every story transaction) and reads its public ledger live from the Preview indexer. With
+The **Lace / Preview** tab is the same app on the real network. It shows the reference deployment on Midnight
+Preprod ([contract](https://preprod.midnightexplorer.com/contracts/d79be6ed9ae73874daa10a1e9e3b36f8772a5d7eb7991f18af1b8975c9027be3), every story transaction with its block on the explorer). Preprod's indexer is
+served by Blockfrost and needs a private token, so the page links to the explorer rather than querying Preprod from
+your browser. With
 Lace set to Preview you can deploy your own Kola ID from the page and run the story as real transactions: proofs
 come from your proof server through Lace, fees are paid in tDUST, and private state is encrypted in your browser.
 
-Deploying from Node.js (`npm run preview:wallet`, `npm run preview:deploy`) and the endpoints are in
+Deploying from Node.js (`npm run preprod:wallet`, `npm run preprod:deploy`, or the `preview:` equivalents) and the endpoints are in
 [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Business model

@@ -298,7 +298,7 @@ function renderLedger() {
 
 function render() { renderSteps(); renderPanel(); renderLedger(); }
 
-$('mode').innerHTML = `<b>Local simulator mode.</b> The real compiled Kola ID circuits run in your browser against a local ledger. Open <b>Lace / Preview</b> to see Kola ID live on the Midnight Preview network, or to deploy your own with Lace.`;
+$('mode').innerHTML = `<b>Local simulator mode.</b> The real compiled Kola ID circuits run in your browser against a local ledger. Open <b>Lace / Preview</b> to see the Kola ID reference deployment on Midnight Preprod, or to deploy your own on Preview with Lace.`;
 document.addEventListener('click', (e) => {
   const t = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-step]');
   if (!t) return; const i = Number(t.dataset.step); tab = STEPS[i].tab; STEPS[i].run(); done.add(i); render();

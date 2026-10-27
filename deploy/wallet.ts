@@ -9,7 +9,7 @@ import {
 import * as ledger from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import { type FinalizedTransaction } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import { getNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
-import { CONFIG, PRIVATE_DIR } from './config.js';
+import { CONFIG, PRIVATE_DIR, checkIndexer } from './config.js';
 import { type WalletKeys } from './keys.js';
 
 export type SavedWalletState = { shielded: string; unshielded: string; dust: string };
@@ -32,6 +32,7 @@ export const saveWalletState = async (wallet: WalletFacade, file: string): Promi
 
 export const buildWallet = async (keys: WalletKeys, saved?: SavedWalletState): Promise<WalletFacade> => {
   const { shieldedSecretKeys, dustSecretKey, unshieldedKeystore } = keys;
+  console.log(`Indexer OK, chain height ${await checkIndexer()}`);
   const wallet = await WalletFacade.init({
     configuration: {
       networkId: getNetworkId(),

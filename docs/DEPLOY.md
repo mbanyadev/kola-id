@@ -1,4 +1,4 @@
-# Running Kola ID on Midnight Preview
+# Running Kola ID on Midnight Preview or Preprod
 
 Two ways to use the real network:
 
@@ -42,19 +42,38 @@ holders), kept in `private/demo-cast-preview.json`. In production each party run
 The same story runs offline in `tests/chain-steps.test.ts` against the simulator, so the role switching and
 expected outcomes are tested before any tDUST is spent.
 
+## Preprod
+
+The same scripts target Preprod with `--network=preprod`:
+
+```bash
+npm run preprod:wallet     # mn_addr_preprod1... address (same throwaway phrase as Preview) and balances
+npm run preprod:deploy     # writes deploy/preprod-deployment.json
+```
+
+Since 9 October 2026 the public Preprod indexer and node RPC are served by Blockfrost (the Midnight-hosted
+`indexer.preprod.midnight.network` now returns HTTP 410). Every Preprod request needs a free Blockfrost project
+token for the **Midnight Preprod** network (it starts with `nightpreprod`). Put it in
+`private/blockfrost-preprod.token` (chmod 600, gitignored) or in `BLOCKFROST_PROJECT_ID`. The scripts add it as
+`?project_id=...`, check it against the indexer before syncing (a bad token fails with Blockfrost's own message), and
+redact it from all output. `npm run preprod:wallet -- --address-only` works without a token.
+
+The proof server is the same 8.1.3 image for both networks (support matrix).
+
 ## Endpoints
 
-| Service | URL |
-|---|---|
-| Node RPC | `https://rpc.preview.midnight.network` |
-| Indexer | `https://indexer.preview.midnight.network/api/v4/graphql` (ws: `wss://indexer.preview.midnight.network/api/v4/graphql/ws`) |
-| Proof server | local, `http://127.0.0.1:6300` |
-| Faucet | https://midnight-tmnight-preview.nethermind.dev/ |
-| Explorers | https://preview.midnightexplorer.com/ · https://midnight-preview.subscan.io/ |
+| Service | Preview | Preprod (`?project_id=<token>` on each) |
+|---|---|---|
+| Node RPC | `https://rpc.preview.midnight.network` | `https://rpc.midnight-preprod.blockfrost.io` |
+| Indexer | `https://indexer.preview.midnight.network/api/v4/graphql` | `https://midnight-preprod.blockfrost.io/api/v0` |
+| Indexer ws | `wss://indexer.preview.midnight.network/api/v4/graphql/ws` | `wss://midnight-preprod.blockfrost.io/api/v0/ws` |
+| Proof server | local 8.1.3, `http://127.0.0.1:6300` | local 8.1.3, `http://127.0.0.1:6300` |
+| Faucet | https://midnight-tmnight-preview.nethermind.dev/ | https://faucet.preprod.midnight.network/ |
+| Explorer | https://preview.midnightexplorer.com/ | https://preprod.midnightexplorer.com/ |
 
 Override with `INDEXER_HTTP`, `INDEXER_WS`, `NODE_RPC`, `PROOF_SERVER`; keep secrets elsewhere with `KOLA_PRIVATE_DIR`.
 
 ## What is never committed
 
-`private/` (recovery phrase, wallet state, demo-role secrets, private-state password, LevelDB store),
+`private/` (recovery phrase, wallet state, demo-role secrets, private-state password, LevelDB store, Blockfrost token), `*.token`,
 `contracts/managed/` (build output), `apps/demo/public/zk/` (copied keys). See `.gitignore`.

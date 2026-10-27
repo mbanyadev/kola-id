@@ -14,7 +14,9 @@
     "typecheck": "tsc -p tsconfig.json",
     "preview:wallet": "tsx deploy/wallet-info.ts",
     "preview:deploy": "tsx deploy/deploy.ts",
-    "demo:zk": "node -e \"const fs=require('fs');const d='apps/demo/public/zk';fs.rmSync(d,{recursive:true,force:true});for(const s of ['keys','zkir'])fs.cpSync('contracts/managed/kola-id/'+s,d+'/'+s,{recursive:true})\""
+    "demo:zk": "node -e \"const fs=require('fs');const d='apps/demo/public/zk';fs.rmSync(d,{recursive:true,force:true});for(const s of ['keys','zkir'])fs.cpSync('contracts/managed/kola-id/'+s,d+'/'+s,{recursive:true})\"",
+    "preprod:wallet": "tsx deploy/wallet-info.ts --network=preprod",
+    "preprod:deploy": "tsx deploy/deploy.ts --network=preprod"
   },
   "dependencies": {
     "@midnight-ntwrk/compact-runtime": "0.16.0",

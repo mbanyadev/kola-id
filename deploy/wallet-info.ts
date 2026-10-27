@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-// Create the throwaway Preview wallet (first run only), sync it, and print its address and balances.
+// Create the throwaway test-network wallet (first run only), sync it, and print its address and balances.
 // The recovery phrase is written to private/ with mode 600 and is never printed.
-import './config.js';
+import { CONFIG, NETWORK_ID } from './config.js';
 import { unshieldedToken } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import { deriveWalletKeys, ensureMnemonic, readSeed } from './keys.js';
 import { buildWallet, loadWalletState, logSyncProgress, saveWalletState, walletStateFile } from './wallet.js';
 
 if (ensureMnemonic()) console.log('Created a new throwaway wallet (recovery phrase saved in private/, mode 600).');
 const keys = deriveWalletKeys(readSeed());
-console.log(`Unshielded address: ${keys.unshieldedKeystore.getBech32Address()}`);
+console.log(`Network: ${NETWORK_ID}\nUnshielded address: ${keys.unshieldedKeystore.getBech32Address()}\nFaucet: ${CONFIG.faucet}`);
 if (process.argv.includes('--address-only')) process.exit(0);
 
 const file = walletStateFile(keys);

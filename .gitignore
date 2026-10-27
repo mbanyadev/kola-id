@@ -53,3 +53,4 @@ private/
 *.mnemonic
 wallet-state-*
 apps/demo/public/zk/
+*.token

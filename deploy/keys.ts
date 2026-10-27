@@ -8,6 +8,7 @@ import * as ledger from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import { getNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { PRIVATE_DIR } from './config.js';
 
+/** One throwaway recovery phrase for every test network; the address prefix follows the network. */
 export const MNEMONIC_FILE = join(PRIVATE_DIR, 'preview-wallet.mnemonic');
 
 export const seedFromMnemonic = (phrase: string): Uint8Array => {
@@ -27,7 +28,7 @@ export const ensureMnemonic = (): boolean => {
 export const readSeed = (): Uint8Array => {
   if (process.env.WALLET_MNEMONIC) return seedFromMnemonic(process.env.WALLET_MNEMONIC);
   if (existsSync(MNEMONIC_FILE)) return seedFromMnemonic(readFileSync(MNEMONIC_FILE, 'utf8'));
-  throw new Error(`No wallet: run "npm run preview:wallet" or set WALLET_MNEMONIC.`);
+  throw new Error(`No wallet: run "npm run preview:wallet" (or preprod:wallet) or set WALLET_MNEMONIC.`);
 };
 
 export const deriveWalletKeys = (seed: Uint8Array) => {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Deploy Kola ID to Midnight Preview and run the demo story on-chain.
-//   npm run preview:deploy            deploy (once) + run every story step not yet recorded
-// Needs: Node 22.12+, a proof server on :6300, and a funded throwaway wallet (npm run preview:wallet).
+//   npm run preview:deploy | preprod:deploy   deploy (once) + run every story step not yet recorded
+// Needs: Node 22.12+, a proof server on :6300, and a funded throwaway wallet (npm run preview:wallet / preprod:wallet).
 // Secrets (wallet phrase, demo-role secrets, private-state password, LevelDB) live only in private/.
 import { CONFIG, CONTRACT_DIR, DEPLOYMENT_FILE, NETWORK_ID, PRIVATE_DIR } from './config.js';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -24,7 +24,7 @@ import {
 import { deriveWalletKeys, readSeed } from './keys.js';
 import { buildWallet, loadWalletState, logSyncProgress, saveWalletState, submitWithRetry, walletStateFile } from './wallet.js';
 
-const FAUCET = 'https://midnight-tmnight-preview.nethermind.dev/';
+const FAUCET = CONFIG.faucet;
 
 /** Public record of the deployment (committed; contains no secrets). */
 interface Deployment {

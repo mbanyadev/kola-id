@@ -56,9 +56,15 @@ Since 9 October 2026 the public Preprod indexer and node RPC are served by Block
 token for the **Midnight Preprod** network (it starts with `nightpreprod`). Put it in
 `private/blockfrost-preprod.token` (chmod 600, gitignored) or in `BLOCKFROST_PROJECT_ID`. The scripts add it as
 `?project_id=...`, check it against the indexer before syncing (a bad token fails with Blockfrost's own message), and
-redact it from all output. `npm run preprod:wallet -- --address-only` works without a token.
+redact it from all output, including URLs that libraries log on their own. `npm run preprod:wallet -- --address-only` works without a token.
 
 The proof server is the same 8.1.3 image for both networks (support matrix).
+
+> **Faucet status, 27 October 2026:** the Preview faucet and the Preprod faucets
+> (https://faucet.preprod.midnight.network/ and https://midnight-tmnight-preprod.nethermind.dev/) were down that day
+> ("Services are currently unavailable"), so the reference wallet could not be funded and Kola ID was not yet
+> deployed on either network. The scripts and the offline test of the on-chain story (`tests/chain-steps.test.ts`) are
+> ready; deploying is one command once a faucet is back.
 
 ## Endpoints
 

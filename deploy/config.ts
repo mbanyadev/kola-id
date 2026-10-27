@@ -77,6 +77,17 @@ export const redact = (s: string): string => {
   if (token) out = out.split(token).join('<redacted>');
   return out;
 };
+// Libraries log URLs on their own (the Polkadot RPC client prints the full WebSocket URL on reconnect),
+// so every console method and direct stdout/stderr write is redacted too.
+for (const m of ['log', 'info', 'warn', 'error', 'debug'] as const) {
+  const orig = console[m].bind(console);
+  console[m] = (...args: unknown[]) => orig(...args.map((a) => (typeof a === 'string' ? redact(a) : a instanceof Error ? redact(a.stack ?? a.message) : a)));
+}
+for (const stream of [process.stdout, process.stderr]) {
+  const write = stream.write.bind(stream) as (chunk: unknown, ...rest: unknown[]) => boolean;
+  stream.write = ((chunk: unknown, ...rest: unknown[]) =>
+    write(typeof chunk === 'string' ? redact(chunk) : Buffer.isBuffer(chunk) ? redact(chunk.toString()) : chunk, ...rest)) as typeof stream.write;
+}
 const fail = (e: unknown) => {
   console.error(redact(e instanceof Error ? (e.stack ?? e.message) : String(e)));
   process.exit(1);

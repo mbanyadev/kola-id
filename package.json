@@ -1,0 +1,26 @@
+{
+  "name": "kola-id",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reusable private identity proofs (age, country, sanctions screening) on Midnight",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "compile": "compact compile contracts/src/kola-id.compact contracts/managed/kola-id",
+    "compile:fast": "compact compile --skip-zk contracts/src/kola-id.compact contracts/managed/kola-id",
+    "test": "vitest run",
+    "demo:dev": "vite apps/demo",
+    "demo:build": "vite build apps/demo",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.16.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vite": "^5.4.21",
+    "vite-plugin-top-level-await": "^1.6.0",
+    "vite-plugin-wasm": "^3.6.0",
+    "vitest": "^2.1.9"
+  }
+}

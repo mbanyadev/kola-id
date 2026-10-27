@@ -1,0 +1,220 @@
+// SPDX-License-Identifier: Apache-2.0
+// Kola ID: reusable private identity proofs on Midnight.
+//
+// An approved issuer (a KYC provider, bank or mobile-money operator) checks a person once and
+// writes a hiding commitment to their credential into a Merkle tree. The holder keeps the
+// attributes. Later the holder proves to any relying app, in zero knowledge, that the credential
+// is in the tree, is not revoked or expired, and meets that app's public policy (minimum age,
+// allowed countries, fresh sanctions screening). The app learns one per-app nullifier, nothing else.
+//
+// Toolchain: compact devtools 0.5.x, compiler 0.31.1 (language 0.23), ledger 8 (Preview/Preprod/Mainnet).
+
+pragma language_version >= 0.20;
+
+import CompactStandardLibrary;
+
+// ---------------------------------------------------------------- types
+
+// Private credential attributes. Only persistentCommit(credential, salt) is ever written on-chain.
+export struct Credential {
+  holderPk: Bytes<32>;      // holderKey(holderSecret)
+  issuerPk: Bytes<32>;      // issuerKey(issuerSecret) of the issuer that wrote the leaf
+  dobDay: Uint<32>;         // birth date, days since 1970-01-01
+  country: Uint<16>;        // ISO 3166-1 numeric (Cameroon = 120)
+  sanctionsClear: Boolean;  // issuer screened the holder and found no match
+  screenedDay: Uint<32>;    // day of that screening
+  expiryDay: Uint<32>;      // credential is valid while today < expiryDay
+}
+
+// Public policy of a relying app. Holders see exactly what is checked before proving.
+export struct Policy {
+  owner: Bytes<32>;                // appKey(appSecret)
+  minAgeDays: Uint<32>;            // 0 = no age check; SDK uses years*365 + years/4 + 1 (never early)
+  countries: Vector<8, Uint<16>>;  // allow-list; 0 = empty slot; all zero = any country
+  requireSanctionsClear: Boolean;
+  maxScreenAgeDays: Uint<32>;      // sanctions screening must be at most this many days old
+  epoch: Uint<32>;                 // bump to open a fresh one-account-per-person window
+}
+
+struct NullifierInput {
+  domain: Bytes<32>;
+  appId: Bytes<32>;
+  epoch: Uint<32>;
+  holderSecret: Bytes<32>;
+}
+
+// ---------------------------------------------------------------- public ledger
+
+export ledger admin: Bytes<32>;                                // adminKey(adminSecret)
+export ledger issuers: Set<Bytes<32>>;                         // approved issuer keys
+export ledger credentials: HistoricMerkleTree<20, Bytes<32>>;  // hiding credential commitments
+export ledger policies: Map<Bytes<32>, Policy>;                // appId -> public policy
+export ledger nullifiers: Set<Bytes<32>>;                      // used (app, epoch, holder) nullifiers
+export ledger verifications: Map<Bytes<32>, Counter>;          // appId -> successful proofs (billing)
+export ledger issuedCount: Counter;                            // total credentials written
+export ledger revokedCount: Counter;                           // total revocations
+
+// ---------------------------------------------------------------- private inputs (witnesses)
+// All of these are answered from the caller's local private state; none leaves their machine.
+
+witness adminSecret(): Bytes<32>;
+witness issuerSecret(): Bytes<32>;
+witness appSecret(): Bytes<32>;
+witness holderSecret(): Bytes<32>;
+witness credential(): Credential;
+witness credentialSalt(): Bytes<32>;
+witness credentialPath(): MerkleTreePath<20, Bytes<32>>;
+
+// ---------------------------------------------------------------- key derivation (domain-separated)
+
+export pure circuit adminKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "kola:admin"), sk]);
+}
+export pure circuit issuerKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "kola:issuer"), sk]);
+}
+export pure circuit appKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "kola:app"), sk]);
+}
+export pure circuit holderKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "kola:holder"), sk]);
+}
+export pure circuit credentialLeaf(c: Credential, salt: Bytes<32>): Bytes<32> {
+  return persistentCommit<Credential>(c, salt);
+}
+export pure circuit nullifierFor(appId: Bytes<32>, epoch: Uint<32>, sk: Bytes<32>): Bytes<32> {
+  return persistentHash<NullifierInput>(NullifierInput {
+    domain: pad(32, "kola:nullifier"), appId: appId, epoch: epoch, holderSecret: sk
+  });
+}
+
+// ---------------------------------------------------------------- constructor
+
+constructor() {
+  admin = disclose(adminKey(adminSecret()));
+}
+
+// ---------------------------------------------------------------- issuer registry (admin)
+
+export circuit addIssuer(issuerPk: Bytes<32>): [] {
+  assert(adminKey(adminSecret()) == admin, "not admin");
+  issuers.insert(disclose(issuerPk));
+}
+
+export circuit removeIssuer(issuerPk: Bytes<32>): [] {
+  assert(adminKey(adminSecret()) == admin, "not admin");
+  issuers.remove(disclose(issuerPk));
+}
+
+// ---------------------------------------------------------------- issuance and revocation (issuer)
+
+// The issuer proves it holds an approved issuer key, without saying which one.
+// The leaf is a hiding commitment, so the ledger shows neither the attributes nor the issuer.
+export circuit issueCredential(leaf: Bytes<32>): [] {
+  assert(issuers.member(disclose(issuerKey(issuerSecret()))), "not an approved issuer");
+  credentials.insert(disclose(leaf));
+  issuedCount.increment(1);
+}
+
+// Revocation: the issuer opens one of its own commitments privately, then zeroes that slot and
+// resets root history so every old root (and every proof against it) stops verifying.
+// Only the slot index becomes public; it is never revealed by any proof, so it can't be joined
+// to an app's records.
+export circuit revokeCredential(): [] {
+  const c = credential();
+  const path = credentialPath();
+  assert(c.issuerPk == issuerKey(issuerSecret()), "not the issuer of this credential");
+  assert(path.leaf == credentialLeaf(c, credentialSalt()), "path does not match credential");
+  assert(credentials.checkRoot(disclose(merkleTreePathRoot<20, Bytes<32>>(path))), "credential not in tree");
+  credentials.insertIndexDefault(disclose(pathIndex(path)));
+  credentials.resetHistory();
+  revokedCount.increment(1);
+}
+
+struct IndexAcc {
+  value: Uint<64>;
+  weight: Uint<64>;
+}
+
+circuit indexStep(acc: IndexAcc, e: MerkleTreePathEntry): IndexAcc {
+  // entries run from the leaf up; goes_left == false means this node is a right child (bit = 1)
+  return IndexAcc {
+    value: e.goes_left ? acc.value : (acc.value + acc.weight) as Uint<64>,
+    weight: (acc.weight * 2) as Uint<64>
+  };
+}
+
+// Index of a leaf, rebuilt from its path directions.
+circuit pathIndex(path: MerkleTreePath<20, Bytes<32>>): Uint<64> {
+  return fold(indexStep, IndexAcc { value: 0, weight: 1 }, path.path).value;
+}
+
+// ---------------------------------------------------------------- relying apps
+
+// Register a new app, or update its own policy (for example bump the epoch).
+export circuit setPolicy(appId: Bytes<32>, policy: Policy): [] {
+  const caller = appKey(appSecret());
+  assert(policy.owner == caller, "policy owner must be the caller");
+  if (policies.member(disclose(appId))) {
+    assert(policies.lookup(disclose(appId)).owner == caller, "not the app owner");
+  } else {
+    verifications.insertDefault(disclose(appId));
+  }
+  policies.insert(disclose(appId), disclose(policy));
+}
+
+// ---------------------------------------------------------------- holder proofs
+
+circuit countryAllowed(country: Uint<16>, allow: Vector<8, Uint<16>>): Boolean {
+  const any = fold((acc: Boolean, x: Uint<16>): Boolean => acc && x == 0, true, allow);
+  const hit = fold((acc: Boolean, x: Uint<16>): Boolean => acc || (x != 0 && x == country), false, allow);
+  return any || hit;
+}
+
+// Everything a proof checks, on private data. Returns the per-app nullifier.
+circuit eligible(appId: Bytes<32>, today: Uint<32>): Bytes<32> {
+  assert(policies.member(appId), "unknown app");
+  const p = policies.lookup(appId);
+  const c = credential();
+  const path = credentialPath();
+  const sk = holderSecret();
+
+  // 1. `today` is honest: it must be the current UTC day by block time (one day of slack).
+  assert(blockTimeGte((today as Uint<64>) * 86400 as Uint<64>), "today is in the future");
+  assert(blockTimeLt(((today as Uint<64>) + 2) * 86400 as Uint<64>), "today is stale");
+
+  // 2. Possession and membership: the credential is mine, and its commitment is in the tree.
+  assert(c.holderPk == holderKey(sk), "not the holder of this credential");
+  assert(path.leaf == credentialLeaf(c, credentialSalt()), "path does not match credential");
+  assert(credentials.checkRoot(disclose(merkleTreePathRoot<20, Bytes<32>>(path))), "unknown or revoked credential");
+
+  // 3. The app's policy, evaluated on private values only.
+  assert(today < c.expiryDay, "credential expired");
+  assert(p.minAgeDays == 0 || (c.dobDay as Uint<64>) + (p.minAgeDays as Uint<64>) <= (today as Uint<64>), "too young");
+  assert(countryAllowed(c.country, p.countries), "country not allowed");
+  assert(!p.requireSanctionsClear || c.sanctionsClear, "sanctions screening not clear");
+  assert(!p.requireSanctionsClear ||
+         ((c.screenedDay <= today) &&
+          (c.screenedDay as Uint<64>) + (p.maxScreenAgeDays as Uint<64>) >= (today as Uint<64>)),
+         "sanctions screening too old");
+
+  // 4. Per-app, per-epoch nullifier: unique for this person here, unlinkable across apps.
+  return nullifierFor(appId, p.epoch, sk);
+}
+
+// First-time sign-up: the nullifier must be new (one account per person per app and epoch).
+export circuit proveForApp(appId: Bytes<32>, today: Uint<32>): Bytes<32> {
+  const nf = disclose(eligible(disclose(appId), disclose(today)));
+  assert(!nullifiers.member(nf), "already registered with this app");
+  nullifiers.insert(nf);
+  verifications.lookup(disclose(appId)).increment(1);
+  return nf;
+}
+
+// Returning user: same checks (still eligible, not revoked), and the nullifier must already exist.
+export circuit proveReturning(appId: Bytes<32>, today: Uint<32>): Bytes<32> {
+  const nf = disclose(eligible(disclose(appId), disclose(today)));
+  assert(nullifiers.member(nf), "not registered with this app");
+  verifications.lookup(disclose(appId)).increment(1);
+  return nf;
+}

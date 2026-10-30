@@ -12,7 +12,7 @@ same person.
 
 **Live demo:** https://mbanyadev.github.io/kola-id/ (simulator mode in your browser, plus a **Lace / Preview** mode on the real network; see [Demo](#demo)). New this wave: the [**Beyond finance**](https://mbanyadev.github.io/kola-id/#beyond-finance) tab, where one person passes a betting app, a cocoa buyer and a job platform.
 
-**Pitch deck:** [docs/Kola-ID-deck.pdf](docs/Kola-ID-deck.pdf) · **Demo video (3 min, captioned):** [docs/media/kola-id-demo.mp4](docs/media/kola-id-demo.mp4) ([direct link](https://mbanyadev.github.io/kola-id/media/kola-id-demo.mp4)) · **Business case:** [docs/BUSINESS.md](docs/BUSINESS.md) · **Use cases:** [docs/use-cases](docs/use-cases/README.md)
+**Pitch deck:** [docs/Kola-ID-deck.pdf](docs/Kola-ID-deck.pdf) · **Demo video (3 min, captioned):** [docs/media/kola-id-demo.mp4](docs/media/kola-id-demo.mp4) ([direct download](https://github.com/mbanyadev/kola-id/raw/main/docs/media/kola-id-demo.mp4)) · **Business case:** [docs/BUSINESS.md](docs/BUSINESS.md) · **Use cases:** [docs/use-cases](docs/use-cases/README.md)
 
 **Live on Midnight Preprod:** contract [`d79be6ed9ae7…027be3`](https://preprod.midnightexplorer.com/contracts/d79be6ed9ae73874daa10a1e9e3b36f8772a5d7eb7991f18af1b8975c9027be3), deployed 27 Oct 2026 with the story run on-chain (record in [`deploy/preprod-deployment.json`](deploy/preprod-deployment.json), details in [docs/DEPLOY.md](docs/DEPLOY.md#reference-deployment-on-preprod-27-october-2026))
 

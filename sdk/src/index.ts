@@ -3,3 +3,4 @@ export * from './dates.js';
 export * from './keys.js';
 export * from './witnesses.js';
 export * from './simulator.js';
+export * from './use-cases.js';

@@ -1,0 +1,162 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Kola ID · Mbanya Dev</title><link rel="stylesheet" href="deck.css"></head><body>
+
+<!-- 1 Title -->
+<section class="slide" style="background:radial-gradient(circle at 85% 20%,#fff1df 0,#fff 55%);">
+  <div style="display:flex;align-items:center;gap:22px;margin-top:70px"><div class="logo">K</div><div class="kicker" style="margin:0">Midnight Buildathon · Wave 3</div></div>
+  <h1 style="margin-top:40px">Kola ID</h1>
+  <p style="font-size:36px;margin:14px 0 0;font-weight:600">Verify once. Prove anywhere. Stay unlinkable.</p>
+  <p class="muted" style="font-size:24px;max-width:860px">Reusable private KYC and credential proofs on Midnight, for the apps that onboard Africa: mobile money, exchanges, lenders, and beyond.</p>
+  <div style="margin-top:36px"><span class="pill">Live on Midnight Preprod</span><span class="pill g">43 tests passing</span><span class="pill b">Open source · Apache-2.0</span></div>
+  <div class="foot"><span>Mbanya Dev</span><span>github.com/mbanyadev/kola-id · mbanyadev.github.io/kola-id</span></div>
+</section>
+
+<!-- 2 Problem -->
+<section class="slide">
+  <p class="kicker">The problem</p>
+  <h2>Every app re-checks the same person, and keeps a copy of their ID</h2>
+  <div class="grid3">
+    <div class="card"><div class="big">31.0 M</div><p>mobile-money accounts in Cameroon at end-2024, 65% of CEMAC's 51.3 M</p><p class="tiny">BEAC, Rapport sur les services de paiement dans la CEMAC 2024, table 13</p></div>
+    <div class="card"><div class="big">1.1 bn</div><p>registered mobile-money accounts in Sub-Saharan Africa in 2024, up 19%</p><p class="tiny">GSMA, State of the Industry Report on Mobile Money 2025</p></div>
+    <div class="card"><div class="big">634,589</div><p>mobile-money points of service in CEMAC, up 41% in one year</p><p class="tiny">BEAC 2024</p></div>
+  </div>
+  <ul style="margin-top:26px">
+    <li>The same customer passes KYC again at every agent network, exchange and lending app. Each check costs about <b>US$1 to 1.35</b> (Sumsub, Blockpass list prices).</li>
+    <li>Each app then stores ID scans it must protect under Cameroon's new data-protection law (No. 2024/017).</li>
+    <li>Outside finance it's worse: betting sites must keep under-21s out, buyers can't verify co-op members, employers can't verify diplomas.</li>
+  </ul>
+  <div class="foot"><span>Mbanya Dev</span><span>2</span></div>
+</section>
+
+<!-- 3 Solution -->
+<section class="slide">
+  <p class="kicker">The solution</p>
+  <h2>Check once with a trusted issuer. Prove to any app, privately.</h2>
+  <div class="flow" style="margin-top:30px">
+    <div class="card"><span class="pill">Issuer</span><h3 style="margin-top:12px">Kumba Verify checks Manka once</h3><p>Signs a credential. Only a <b>commitment</b> goes on-chain, into a registry of approved issuers.</p></div>
+    <div class="arrow">→</div>
+    <div class="card"><span class="pill g">Holder</span><h3 style="margin-top:12px">Manka's wallet keeps it private</h3><p>Her birth date, country and screening stay on her device as Midnight private state.</p></div>
+    <div class="arrow">→</div>
+    <div class="card"><span class="pill b">App</span><h3 style="margin-top:12px">Sawa Exchange gets a yes</h3><p>A zero-knowledge proof that she meets <b>its public policy</b>, plus a per-app nullifier.</p></div>
+  </div>
+  <div class="grid3" style="margin-top:28px">
+    <p class="small"><b>One account per person:</b> the nullifier stops duplicate sign-ups.</p>
+    <p class="small"><b>Unlinkable:</b> a different nullifier for every app, so apps can't pool data to track her.</p>
+    <p class="small"><b>Revocable:</b> the issuer can revoke; the proof then fails everywhere.</p>
+  </div>
+  <div class="foot"><span>Mbanya Dev</span><span>3</span></div>
+</section>
+
+<!-- 4 Private vs public -->
+<section class="slide">
+  <p class="kicker">What Midnight makes possible</p>
+  <h2>Public where it must be, private everywhere else</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr 400px;gap:24px;align-items:start">
+    <div class="card" style="background:#fff"><h3 class="ok">Public on Midnight</h3><ul class="small">
+      <li>Approved issuer key hashes (who may issue)</li><li>Credential commitments in a Merkle tree, and revocations</li>
+      <li>Each app's policy: minimum age, allowed countries, screening freshness, epoch</li><li>Per-app nullifiers and a verification counter (for billing)</li></ul></div>
+    <div class="card"><h3 class="bad">Never leaves the holder</h3><ul class="small">
+      <li>Name, birth date, country, document</li><li>Which issuer checked her</li><li>Which other apps she uses</li><li>Her holder secret</li></ul></div>
+    <img class="shot" src="img/main-ledger.png" style="width:400px">
+  </div>
+  <p class="small muted" style="margin-top:22px">In Compact, only what passes through <span class="mono">disclose()</span> becomes public: here the app id, the yes/no eligibility result, the nullifier, Merkle roots, the policy and the date. Never the credential's contents. Right: the demo's public ledger after the full story. Threat model: docs/THREAT_MODEL.md.</p>
+  <div class="foot"><span>Mbanya Dev</span><span>4</span></div>
+</section>
+
+<!-- 5 Demo -->
+<section class="slide" style="padding-right:40px">
+  <p class="kicker">Demo · mbanyadev.github.io/kola-id</p>
+  <div style="display:grid;grid-template-columns:420px 1fr;gap:30px">
+    <div><h2 style="font-size:38px">One person, three apps</h2>
+      <p class="small">Manka passes a <b>betting</b> app's 21+ check, a <b>cocoa buyer</b>'s co-op membership check and a <b>job platform</b>'s certificate check, each with a different nullifier.</p>
+      <p class="small"><span class="bad">Refused:</span> Ebai (19) at the betting app, Tabe (lapsed member) at the buyer, a fake diploma mill at issuance.</p>
+      <p class="small">The real compiled circuits run in the browser. The KYC story is also deployed and replayed on <b>Preprod</b>, with every transaction on the explorer.</p></div>
+    <div><img class="shot" src="img/uc-gaming.png" style="width:720px"><img class="shot" src="img/uc-nullifiers.png" style="width:720px;margin-top:14px"></div>
+  </div>
+  <div class="foot"><span>Mbanya Dev</span><span>5</span></div>
+</section>
+
+<!-- 6 Beyond finance -->
+<section class="slide">
+  <p class="kicker">Beyond finance · same contract, three registries</p>
+  <h2>Each trust domain gets its own registry</h2>
+  <table>
+    <tr><th>Industry</th><th>Issuer → app</th><th>Public policy</th><th>Why it matters</th></tr>
+    <tr><td><b>Gaming</b></td><td>KYC provider → betting operator</td><td>21+, Cameroon, one account per person</td><td class="small">Betting is closed below civil majority (21) and online operators must prevent minors' access (Decree 2019/2300/PM art. 16; Penal Code art. 249-7)</td></tr>
+    <tr><td><b>Agriculture</b></td><td>Cocoa co-op union → buyer</td><td>Current member (re-checked ≤ 365 days), adult, Cameroon</td><td class="small">EUDR applies from 30 Dec 2026 for large and medium operators; FAO is supporting Cameroon co-ops to comply</td></tr>
+    <tr><td><b>Jobs</b></td><td>Accredited institute → job platform</td><td>Certificate authenticated ≤ 2 years, not expired, adult</td><td class="small">Cameroon's public service launched a diploma-authentication platform in Oct 2024; private employers have none</td></tr>
+  </table>
+  <p class="small" style="margin-top:20px">A co-op union can't mint ID checks and an institute can't mint memberships, because each registry approves only its own issuers. This is enforced by the existing contract and covered by tests. A typed claim field (one registry, many credential types) is on the v2 roadmap.</p>
+  <div class="foot"><span>Mbanya Dev</span><span>6</span></div>
+</section>
+
+<!-- 7 Engineering -->
+<section class="slide">
+  <p class="kicker">Built on Midnight</p>
+  <h2>A real contract, deployed and tested</h2>
+  <div class="grid2">
+    <div><ul class="small">
+      <li><b>Compact</b> contract (compiler 0.31.1): addIssuer, removeIssuer, issueCredential, revokeCredential, setPolicy, proveForApp, proveReturning</li>
+      <li>Holder data held as <b>private state</b> through witnesses; Merkle-tree membership with root history</li>
+      <li><b>TypeScript SDK</b> and a simulator running the compiled circuits</li>
+      <li><b>Midnight.js 4.1.1</b>, proof server 8.1.3, Lace via the DApp Connector</li>
+      <li><b>43 Vitest tests</b>: policy edges, revocation, duplicates, epochs, unlinkability, the on-chain story and the three non-finance registries</li></ul></div>
+    <div class="card"><h3>Live on Preprod</h3><p class="mono" style="word-break:break-all">d79be6ed9ae73874daa10a1e9e3b36f8772a5d7eb7991f18af1b8975c9027be3</p>
+      <p class="small">Deployed 27 Oct 2026. The full story (approve issuer, issue, publish policies, sign-ups, refusals, revocation) was run on-chain, and every transaction is linked to the Midnight explorer in the repo.</p>
+      <p class="tiny">The Co-op and Skills registry presets run in the in-browser simulator only; they are not deployed to Preprod yet.</p></div>
+  </div>
+  <div class="foot"><span>Mbanya Dev</span><span>7</span></div>
+</section>
+
+<!-- 8 Business -->
+<section class="slide">
+  <p class="kicker">Business model (proposed)</p>
+  <h2>Apps pay per proof. Issuers earn when their checks are reused.</h2>
+  <div class="grid3">
+    <div class="card"><span class="pill">Pilot</span><div class="big" style="font-size:40px;margin-top:12px">Free</div><p>first 1,000 proofs per app, for design partners</p></div>
+    <div class="card" style="border-color:var(--kola2);background:#fff1df"><span class="pill">Standard</span><div class="big" style="font-size:40px;margin-top:12px">150 FCFA</div><p>(≈ €0.23) per sign-up proof, 10 FCFA per returning login. No monthly minimum.</p></div>
+    <div class="card"><span class="pill">Compliance · roadmap</span><div class="big" style="font-size:40px;margin-top:12px">300 FCFA</div><p>per proof, with issuer file access under a reliance agreement</p></div>
+  </div>
+  <ul class="small" style="margin-top:22px">
+    <li><b>40% to the issuer</b> whose credential was used; 60% to Kola ID. Billing is auditable from the on-chain verification counter.</li>
+    <li>Versus a fresh check: US$1.35 per verification on Sumsub Basic (US$149/month minimum) and US$1.00 to 1.35 on Blockpass (US$99/month minimum).</li>
+    <li><b>Regulated finance:</b> CEMAC Regulation 02/24 (art. 69 to 72) lets institutions rely on a regulated third party for due diligence, with documents provided on request. Kola ID is the rails for that reliance, not a way around it.</li>
+  </ul>
+  <div class="foot"><span>Mbanya Dev</span><span>8</span></div>
+</section>
+
+<!-- 9 GTM + competitors -->
+<section class="slide">
+  <p class="kicker">Go-to-market and competition</p>
+  <div class="grid2">
+    <div><h2 style="font-size:34px">Start with one issuer and one app per vertical</h2>
+      <ol class="small">
+        <li><b>KYC:</b> a KYC provider or microfinance institution in Douala or Buea, with one exchange or lending app</li>
+        <li><b>Co-ops:</b> one South-West cocoa union, with one buyer preparing for EUDR</li>
+        <li><b>Skills:</b> one technical institute, with one job platform</li>
+        <li>A hosted check page and webhook, so apps never touch Midnight directly</li>
+        <li>Then mainnet, and the other five CEMAC countries, which share one AML regulation</li></ol>
+      <p class="tiny">Proposed plan. No issuers or apps have signed yet.</p></div>
+    <div><table class="small" style="font-size:14px">
+      <tr><th>Player</th><th>Kola ID's angle</th></tr>
+      <tr><td><b>Smile ID, Youverify</b><br><span class="tiny">African KYC leaders</span></td><td>Potential <b>issuers</b>: Kola makes their checks reusable without sharing the person</td></tr>
+      <tr><td><b>Sumsub ID</b><br><span class="tiny">vendor reusable KYC</span></td><td>Reuse inside one vendor, and apps still get personal data</td></tr>
+      <tr><td><b>Privado ID</b><br><span class="tiny">ZK credentials, EVM</span></td><td>Closest concept. Kola uses Midnight private state, per-app nullifiers and on-chain issuer registries, with CEMAC policies</td></tr>
+      <tr><td><b>World ID</b></td><td>Proves "unique human" via biometrics, not age, membership or skills</td></tr>
+      <tr><td><b>Hyperledger Identus</b></td><td>An SSI toolkit, with no registry, policies or billing</td></tr></table></div>
+  </div>
+  <div class="foot"><span>Mbanya Dev</span><span>9</span></div>
+</section>
+
+<!-- 10 Roadmap + ask -->
+<section class="slide" style="background:radial-gradient(circle at 90% 90%,#fff1df 0,#fff 50%);">
+  <p class="kicker">Where we are and what's next</p>
+  <h2>Early product, clear route to market</h2>
+  <div class="grid2">
+    <div class="card" style="background:#fff"><h3>Done</h3><ul class="small"><li>Contract live on Preprod; full story run on-chain</li><li>SDK, in-browser demo, Lace connection</li><li>43 tests; threat model; three non-finance registries</li><li>Business case with cited market and regulatory sources</li></ul></div>
+    <div class="card"><h3>Next</h3><ul class="small"><li>Typed claims: several credential types in one registry</li><li>Compliance mode: an encrypted pointer only the issuer can open, on lawful request</li><li>Hosted check page and issuer SDK; mainnet fee measurements</li><li>First design partners in each vertical</li></ul></div>
+  </div>
+  <p style="margin-top:26px;font-size:22px"><b>The ask:</b> Midnight Build Club support, and introductions to one issuer and one app in each vertical.</p>
+  <p class="tiny">Honest status: no users, customers or revenue yet. All people and companies in the demo are fictional. Sources: docs/BUSINESS.md.</p>
+  <div class="foot"><span>Mbanya Dev · github.com/mbanyadev/kola-id</span><span>10</span></div>
+</section>
+</body></html>

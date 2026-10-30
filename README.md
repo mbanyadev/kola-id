@@ -10,7 +10,9 @@ screening clear and recent**. The app gets one yes/no and a per-app nullifier. I
 birth date, country, document or even which issuer verified the person, and two apps cannot link the
 same person.
 
-**Live demo:** https://mbanyadev.github.io/kola-id/ (simulator mode in your browser, plus a **Lace / Preview** mode on the real network; see [Demo](#demo))
+**Live demo:** https://mbanyadev.github.io/kola-id/ (simulator mode in your browser, plus a **Lace / Preview** mode on the real network; see [Demo](#demo)). New this wave: the [**Beyond finance**](https://mbanyadev.github.io/kola-id/#beyond-finance) tab, where one person passes a betting app, a cocoa buyer and a job platform.
+
+**Pitch deck:** [docs/Kola-ID-deck.pdf](docs/Kola-ID-deck.pdf) · **Demo video (3 min, captioned):** [docs/media/kola-id-demo.mp4](docs/media/kola-id-demo.mp4) ([direct link](https://mbanyadev.github.io/kola-id/media/kola-id-demo.mp4)) · **Business case:** [docs/BUSINESS.md](docs/BUSINESS.md) · **Use cases:** [docs/use-cases](docs/use-cases/README.md)
 
 **Live on Midnight Preprod:** contract [`d79be6ed9ae7…027be3`](https://preprod.midnightexplorer.com/contracts/d79be6ed9ae73874daa10a1e9e3b36f8772a5d7eb7991f18af1b8975c9027be3), deployed 27 Oct 2026 with the story run on-chain (record in [`deploy/preprod-deployment.json`](deploy/preprod-deployment.json), details in [docs/DEPLOY.md](docs/DEPLOY.md#reference-deployment-on-preprod-27-october-2026))
 
@@ -18,7 +20,7 @@ same person.
 |---|---|
 | Contract | [`contracts/src/kola-id.compact`](contracts/src/kola-id.compact): 7 proving circuits + 6 pure helpers |
 | Toolchain | Compact compiler **0.31.1** (language 0.23), compact-runtime 0.16.0, ledger 8: the versions the [support matrix](https://docs.midnight.network/relnotes/support-matrix) lists for Preview, Preprod and Mainnet |
-| Tests | 32 tests, all passing (`npm test`): 30 contract tests + the on-chain story checked offline |
+| Tests | 43 tests, all passing (`npm test`): 30 contract tests, the on-chain story checked offline, and 11 tests for the three non-finance registries |
 | Network | Midnight **Preprod** (reference deployment) and **Preview**: proof server 8.1.3, Midnight.js 4.1.1, wallet SDK 1.2.0, DApp Connector 4.0.1 |
 | License | Apache-2.0 |
 
@@ -101,9 +103,12 @@ holder key, commitment, salt, secret and issuer key never appear in it.
 contracts/src/kola-id.compact   the contract
 sdk/src/                        witnesses, builders, simulator, Midnight.js glue (chain.ts)
 deploy/                         Preview/Preprod wallet + deploy script (Node 22), public deployment records
+sdk/src/use-cases.ts            the three "beyond finance" presets (policies, issuers, fail cases)
 tests/                          Vitest simulator tests
 apps/demo/                      web demo (Vite, no framework), deployed to GitHub Pages
-docs/                           design, 0.31.1 compatibility notes, threat model
+docs/                           design, business case, use cases, 0.31.1 compatibility notes, threat model
+docs/Kola-ID-deck.pdf           pitch deck (source in docs/deck/)
+docs/media/                     demo video and its captions (.srt)
 ```
 
 ## Setup
@@ -118,7 +123,7 @@ compact compile --version          # 0.31.1
 
 npm install
 npm run compile                     # compact compile → contracts/managed/kola-id (circuits, ZK keys, JS)
-npm test                            # 32 tests
+npm test                            # 43 tests
 npm run typecheck
 npm run demo:dev                    # http://localhost:5173
 ```
@@ -136,9 +141,14 @@ npm run demo:dev                    # http://localhost:5173
   in the future or stale against block time; revocation (old paths and old roots rejected, re-issue
   works and does not allow a second account); revoking exactly the right slot among many; only the
   issuing issuer can revoke; and what appears in the public transcript.
+* `tests/use-cases.test.ts` runs the three non-finance registries: each pass case, each refusal
+  (under 21 at a betting app, lapsed co-op membership, an unaccredited "diploma mill" issuer, an
+  expired licence), three different nullifiers for one person across three apps, and that an issuer
+  approved in one registry cannot issue into another.
 * Mutation check: flipping the slot-index direction or deleting the root check in the contract makes
   the revocation tests fail, so they test the contract, not the fixture.
-* Open the [demo](https://mbanyadev.github.io/kola-id/) and press the guided steps 1 to 8.
+* Open the [demo](https://mbanyadev.github.io/kola-id/) and press the guided steps 1 to 8, then open
+  **Beyond finance** and press **Run: Manka passes three apps**.
 
 ## Demo
 
@@ -149,6 +159,23 @@ The guided steps follow the story: approve the issuer, issue to Manka (adult) an
 policies, Manka signs up (✅), tries again (❌ already registered), signs up to a second app (✅, a
 different nullifier), Ebai is rejected (❌ too young), the issuer revokes Manka (❌), re-issues, and she
 logs back in (✅). All names are fictional.
+
+### Beyond finance
+
+The **Beyond finance** tab runs the same contract, unchanged, as three separate registries (one Kola ID
+deployment per trust domain, each approving only its own kind of issuer):
+
+| App (fictional) | Issuer (fictional) | Public policy |
+|---|---|---|
+| **Mboa Bet**, online betting | Kumba Verify (KYC registry) | 21+ (Cameroon's civil majority), Cameroon, one account per person |
+| **Limbe Cocoa Buyers**, cocoa buyer | Fako Cocoa Farmers Union (Co-op registry) | current member, good standing re-checked within 365 days, adult, Cameroon |
+| **Mboa Jobs**, job platform | Buea Technical Institute (Skills registry) | certificate authenticated within 2 years, not expired, adult |
+
+Manka passes all three with three unlinkable nullifiers; Ebai (19) fails the 21+ check, Tabe's lapsed
+membership fails, and an unaccredited "Quick Diploma Centre" cannot issue at all. In these registries the
+contract's screening pair (`sanctionsClear`, `screenedDay`) means "the issuer's check passed, on this
+day". The pages in [docs/use-cases](docs/use-cases/README.md) give each policy and the regulation behind
+it. These presets run in the in-browser simulator; only the KYC registry is deployed on Preprod so far.
 
 The **Lace / Preview** tab is the same app on the real network. It shows the reference deployment on Midnight
 Preprod ([contract](https://preprod.midnightexplorer.com/contracts/d79be6ed9ae73874daa10a1e9e3b36f8772a5d7eb7991f18af1b8975c9027be3), every story transaction with its block on the explorer). Preprod's indexer is
@@ -162,19 +189,31 @@ Deploying from Node.js (`npm run preprod:wallet`, `npm run preprod:deploy`, or t
 
 ## Business model
 
-Apps pay per successful verification (counted on-chain per app; invoicing off-chain in the MVP), below
-the price of a fresh KYC check. Issuers earn a share every time a credential they issued is reused, which
-is how we recruit them. A compliance tier sells policy templates and audit exports. The wedge is
-cross-border fintech and crypto on-ramps serving African and other emerging markets, where users are
-re-verified constantly and storing ID documents is a data-protection liability; then age-gated commerce
-and sybil-resistant airdrops and DAO votes. See [docs/DESIGN.md](docs/DESIGN.md).
+Full business case with sources: [docs/BUSINESS.md](docs/BUSINESS.md). Kola ID is an early product: no
+customers, signed issuers or revenue yet, so everything here is a proposal.
+
+* **Buyers:** mobile-money agent networks, exchanges and lending apps in Cameroon and CEMAC that must
+  identify every customer (Cameroon alone had 31.0 M mobile-money accounts at end-2024, per the BEAC),
+  then betting operators, commodity buyers and job platforms.
+* **Pricing (proposed):** the app pays per successful proof, 150 FCFA (≈ €0.23) per sign-up and 10 FCFA per
+  returning login, with no monthly minimum; the first 1,000 proofs per app are free. Successful proofs are
+  counted on-chain per app. 40% goes to the issuer whose credential was reused. For comparison, a fresh
+  check lists at US$1.35 on Sumsub Basic and US$1.00 to 1.35 on Blockpass.
+* **Regulated finance:** CEMAC Regulation 02/24 lets institutions rely on a regulated third party for
+  customer due diligence, with identity data and documents provided on request (arts. 69 to 72). Kola ID
+  fits as the rails for that reliance; the issuer keeps the file. A compliance mode (an encrypted pointer
+  only the issuer can open, on lawful request) is on the roadmap.
+* **Go-to-market:** one issuer and one app per vertical as design partners, a hosted check page so apps
+  never touch Midnight directly, then mainnet and the other CEMAC countries.
 
 ## Limitations and roadmap
 
 See [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md). In short: a malicious issuer can attest false facts
 (mitigated by issuer approval and removal; staking and slashing are on the roadmap); removing an issuer
 does not retro-revoke its credentials yet (per-issuer trees planned); a revocation invalidates in-flight
-proofs, so revocations should be batched; fee settlement in NIGHT is a roadmap item.
+proofs, so revocations should be batched; fee settlement in NIGHT is a roadmap item. Also planned: a
+typed claim field so one registry can hold several credential types, the compliance mode above, and
+deploying the Co-op and Skills registries to Preprod.
 
 ## License
 

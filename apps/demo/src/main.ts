@@ -5,6 +5,7 @@ import './style.css';
 import {
   KolaSimulator, makeCredential, makePolicy, pureCircuits, randomBytes32, labelBytes32, toHex,
   dayNumber, dayToIso, minAgeDays, COUNTRY, type Credential, type KolaPrivateState,
+  USE_CASES, UseCaseRegistry, runFailCase, type UseCase,
 } from '../../../sdk/src/index.js';
 
 // ------------------------------------------------------------------ model
@@ -27,11 +28,20 @@ let adminSecret: Uint8Array;
 let issuer: Issuer;
 let holders: Holder[];
 let apps: App[];
-type Tab = 'admin' | 'issuer' | 'holder' | 'apps' | 'preview';
+type Tab = 'admin' | 'issuer' | 'holder' | 'apps' | 'usecases' | 'preview';
 let tab: Tab = 'admin';
 let currentHolder = 'Manka';
 let lastResult: { ok: boolean; text: string } | null = null;
 const done = new Set<number>();
+
+// "Beyond finance" presets: one person (Manka), three registries, three apps.
+interface UcState { uc: UseCase; reg: UseCaseRegistry; manka?: KolaPrivateState; leaf?: string; nf?: string; result?: { ok: boolean; text: string }; failText?: string; }
+let ucs: UcState[] = [];
+let mankaUcSecret = randomBytes32();
+function resetUseCases() {
+  mankaUcSecret = randomBytes32();
+  ucs = USE_CASES.map((uc) => ({ uc, reg: new UseCaseRegistry(uc, todayDay) }));
+}
 
 function reset() {
   adminSecret = randomBytes32();
@@ -46,6 +56,7 @@ function reset() {
     { name: 'Ndole Games', id: labelBytes32('ndole-games'), secret: randomBytes32(), seen: [] },
   ];
   done.clear(); lastResult = null; logEl.innerHTML = '';
+  resetUseCases();
   log('Kola ID contract deployed (local simulator). Admin key hash written to the ledger.', 'ok');
 }
 
@@ -142,6 +153,39 @@ function prove(h: Holder, app: App, returning = false) {
   });
 }
 
+function ucIssue(u: UcState) {
+  if (u.manka) return;
+  try {
+    u.manka = u.reg.issue(mankaUcSecret, u.uc.manka(todayDay));
+    u.leaf = toHex(pureCircuits.credentialLeaf(u.manka.credential!, u.manka.salt!));
+    u.result = { ok: true, text: `${u.uc.issuer} issued Manka a credential. Only the commitment ${short(u.leaf)} went on-chain.` };
+    log(`${u.uc.registry.name}: ${u.uc.issuer} issues to Manka`, 'ok');
+  } catch (e) { u.result = { ok: false, text: friendly(e) }; log(u.result.text, 'bad'); }
+}
+function ucProve(u: UcState) {
+  ucIssue(u);
+  try {
+    const nf = u.reg.prove(u.manka!);
+    u.nf = toHex(nf);
+    u.result = { ok: true, text: `Manka passes the ${u.uc.app.name} check. ${u.uc.app.name} received only the nullifier ${short(nf)}.` };
+    log(`Manka → ${u.uc.app.name}: passed`, 'ok');
+  } catch (e) {
+    u.result = { ok: false, text: `Manka → ${u.uc.app.name}: ${friendly(e)}` }; log(u.result.text, 'bad');
+  }
+}
+function ucFail(u: UcState) {
+  let msg: string;
+  try { msg = runFailCase(u.reg); } catch (e) { msg = `unexpected: ${e instanceof Error ? e.message : String(e)}`; }
+  u.failText = u.uc.fail.expect.test(msg)
+    ? `❌ ${u.uc.fail.who} → ${u.uc.app.name}: ${u.uc.fail.outcome}`
+    : `${u.uc.fail.who} → ${u.uc.app.name}: ${friendly(new Error(msg))}`;
+  log(u.failText, 'bad');
+}
+function ucRunAll() {
+  resetUseCases();
+  ucs.forEach((u) => { ucIssue(u); ucProve(u); ucFail(u); });
+}
+
 const byName = (n: string) => holders.find((h) => h.name === n)!;
 const app = (n: string) => apps.find((a) => a.name === n)!;
 const SAWA_POLICY = { minAgeYears: 18, countries: [COUNTRY.Cameroon, COUNTRY.Ghana, COUNTRY.Kenya, COUNTRY.Nigeria], sanctions: true, maxDays: 90 };
@@ -183,8 +227,8 @@ function policyText(appId: Uint8Array): string {
 
 function renderPanel() {
   const panel = $('panel');
-  $('tabs').innerHTML = (['admin', 'issuer', 'holder', 'apps', 'preview'] as const).map((t) =>
-    `<button class="${t === tab ? 'active' : 'ghost'}" data-tab="${t}">${{ admin: 'Registry admin', issuer: 'Issuer · Kumba Verify', holder: 'Holder wallet', apps: 'Apps', preview: 'Lace / Preview' }[t]}</button>`).join('');
+  $('tabs').innerHTML = (['admin', 'issuer', 'holder', 'apps', 'usecases', 'preview'] as const).map((t) =>
+    `<button class="${t === tab ? 'active' : 'ghost'}${t === 'usecases' ? ' new' : ''}" data-tab="${t}">${{ admin: 'Registry admin', issuer: 'Issuer · Kumba Verify', holder: 'Holder wallet', apps: 'Apps', usecases: 'Beyond finance', preview: 'Lace / Preview' }[t]}</button>`).join('');
   const result = lastResult ? `<div class="result ${lastResult.ok ? 'ok' : 'bad'}">${lastResult.ok ? '✅' : '❌'} ${esc(lastResult.text)}</div>` : '';
 
   if (tab === 'admin') {
@@ -272,6 +316,30 @@ function renderPanel() {
     }));
     panel.querySelectorAll<HTMLButtonElement>('[data-epoch]').forEach((b) => b.addEventListener('click', () => bumpEpoch(apps[Number(b.dataset.epoch)])));
   }
+  if (tab === 'usecases') {
+    const creds = ucs.filter((u) => u.manka).map((u) => `<tr><td>${u.uc.registry.name}</td><td>${u.uc.issuer}</td><td>${esc(u.uc.checkMeaning)}</td></tr>`).join('');
+    panel.innerHTML = `<div class="card intro"><span class="tag">Beyond finance · same contract, three registries</span>
+      <h3>One person, three apps: betting, cocoa buying, hiring</h3>
+      <p>Manka (fictional) is 28, a member of a cocoa co-op and a certified solar technician. Three issuers have each checked one fact about her, once. Each kind of issuer lives in its own Kola ID registry, so a co-op can never mint an ID check and an institute can never mint a co-op membership.</p>
+      <div class="row"><button id="ucRun">▶ Run: Manka passes three apps</button><button class="ghost" id="ucReset">Reset</button></div></div>
+      <div class="card private"><span class="tag">Private · stays on Manka's device</span><h3>Manka's credentials</h3>
+      ${creds ? `<table><tr><th>Registry</th><th>Issued by</th><th>Says</th></tr>${creds}</table>` : '<p class="muted">None yet. Issue below or press Run.</p>'}</div>
+      ${ucs.map((u, i) => `<div class="card uc" id="uc-${u.uc.id}"><span class="tag">${u.uc.industry}</span>
+        <h3>${u.uc.app.name} <small class="muted">${esc(u.uc.app.does)}</small></h3>
+        <div class="ucgrid"><div><b>Public policy</b><ul class="policy">${u.uc.policyLines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>
+        <div><b>Issuer</b><p class="muted">${u.uc.issuer}, in the ${u.uc.registry.name} (${esc(u.uc.registry.issuers)})</p>
+        <b>The app learns</b><p class="muted">${esc(u.uc.appLearns)}</p></div></div>
+        <div class="row"><button class="ghost" data-ucissue="${i}" ${u.manka ? 'disabled' : ''}>1 Issue to Manka</button><button data-ucprove="${i}">2 Manka proves</button><button class="ghost" data-ucfail="${i}">Try: ${esc(u.uc.fail.who)}</button></div>
+        ${u.result ? `<div class="result ${u.result.ok ? 'ok' : 'bad'}">${u.result.ok ? '✅' : '❌'} ${esc(u.result.text)}</div>` : ''}
+        ${u.failText ? `<div class="result bad">${esc(u.failText)}<br><small>${esc(u.uc.fail.story)}</small></div>` : ''}
+        <p class="muted">${u.reg.verifications} verified (billable) · <a href="https://github.com/mbanyadev/kola-id/blob/main/${u.uc.doc}" target="_blank" rel="noopener">use-case page</a></p></div>`).join('')}
+      ${ucs.every((u) => u.nf) ? `<div class="card"><h3>Can the three apps link Manka?</h3><table>${ucs.map((u) => `<tr><td>${u.uc.app.name}</td><td class="mono">${short(u.nf!)}</td></tr>`).join('')}</table><p class="muted">Three different nullifiers. Even if Mboa Bet, Limbe Cocoa Buyers and Mboa Jobs pooled their databases, nothing joins.</p></div>` : ''}`;
+    $('ucRun').addEventListener('click', () => { ucRunAll(); render(); });
+    $('ucReset').addEventListener('click', () => { resetUseCases(); render(); });
+    panel.querySelectorAll<HTMLButtonElement>('[data-ucissue]').forEach((b) => b.addEventListener('click', () => { ucIssue(ucs[Number(b.dataset.ucissue)]); render(); }));
+    panel.querySelectorAll<HTMLButtonElement>('[data-ucprove]').forEach((b) => b.addEventListener('click', () => { ucProve(ucs[Number(b.dataset.ucprove)]); render(); }));
+    panel.querySelectorAll<HTMLButtonElement>('[data-ucfail]').forEach((b) => b.addEventListener('click', () => { ucFail(ucs[Number(b.dataset.ucfail)]); render(); }));
+  }
   if (tab === 'preview') {
     panel.innerHTML = '<div id="previewRoot"><div class="card"><p class="muted">Loading the Midnight Preview client…</p></div></div>';
     import('./preview.js')
@@ -282,6 +350,18 @@ function renderPanel() {
 }
 
 function renderLedger() {
+  if (tab === 'usecases') {
+    $('ledger').innerHTML = ucs.map((u) => {
+      const L = u.reg.sim.ledger;
+      const nfs = [...L.nullifiers].map((n) => `<div class="mono">${short(n)}</div>`).join('') || '<span class="muted">none</span>';
+      return `<div class="card"><b>${u.uc.registry.name}</b><table>
+        <tr><th>issuers</th><td>${L.issuers.size()} approved key hash</td></tr>
+        <tr><th>credentials</th><td>${L.issuedCount} commitment(s) · root <span class="mono">${short(L.credentials.root().field.toString(16).padStart(64, '0'))}</span></td></tr>
+        <tr><th>policy</th><td>${u.uc.app.label}: ${u.reg.verifications} verification(s)</td></tr>
+        <tr><th>nullifiers</th><td>${nfs}</td></tr></table></div>`;
+    }).join('') + '<p class="muted">Three registries, all public. No name, birth date, member number, school or issuer-per-person anywhere.</p>';
+    return;
+  }
   const L = sim.ledger;
   const nfs = [...L.nullifiers].map((n) => `<div class="mono">${short(n)}</div>`).join('') || '<span class="muted">none</span>';
   const issuers = [...L.issuers].map((n) => `<div class="mono">${short(n)}</div>`).join('') || '<span class="muted">none</span>';
@@ -305,4 +385,6 @@ document.addEventListener('click', (e) => {
 });
 $('runAll').addEventListener('click', () => { reset(); STEPS.forEach((s, i) => { s.run(); done.add(i); }); tab = 'apps'; render(); });
 $('reset').addEventListener('click', () => { reset(); tab = 'admin'; render(); });
-reset(); render();
+reset();
+if (location.hash.startsWith('#beyond-finance')) { tab = 'usecases'; if (location.hash === '#beyond-finance-run') ucRunAll(); }
+render();

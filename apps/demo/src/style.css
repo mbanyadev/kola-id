@@ -38,3 +38,10 @@ h2 { font-size:1rem; margin:.2rem 0 .6rem; } h2 small { color:var(--muted); font
 .chips { display:flex; gap:.3rem; flex-wrap:wrap; } .chip { font-size:.75rem; padding:.1rem .45rem; border-radius:999px; background:#f1e7dd; }
 .flash { animation: flash 1.2s ease-out; } @keyframes flash { from { background:#fff1c2; } to { background:transparent; } }
 footer { padding:1rem 1.5rem 2rem; color:var(--muted); font-size:.8rem; } footer a { color:var(--kola); }
+.tabs button.new::after { content:'new'; font-size:.62rem; margin-left:.35rem; padding:.05rem .35rem; border-radius:999px; background:#ffd166; color:var(--ink); vertical-align:middle; }
+.card.intro { background:linear-gradient(135deg,#fff3e8,#fffdf9); border-color:#f3c9a6; }
+.card.uc h3 small { font-weight:400; font-size:.8rem; margin-left:.3rem; }
+.ucgrid { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; font-size:.88rem; }
+.ucgrid p { margin:.15rem 0 .5rem; }
+@media (max-width: 700px) { .ucgrid { grid-template-columns:1fr; } }
+@media (min-width: 901px) { main > aside { position:sticky; top:.8rem; align-self:start; max-height:calc(100vh - 1.6rem); overflow:auto; } }

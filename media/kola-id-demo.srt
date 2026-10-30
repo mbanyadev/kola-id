@@ -1,0 +1,120 @@
+1
+00:00:00,300 --> 00:00:06,900
+Kola ID: verify once, prove anywhere, stay unlinkable. Built on Midnight by Mbanya Dev
+
+2
+00:00:07,300 --> 00:00:12,400
+Every app re-checks the same person, at about US$1 to 1.35 a check
+
+3
+00:00:12,800 --> 00:00:17,900
+and keeps a copy of their ID that it then has to protect
+
+4
+00:00:18,300 --> 00:00:23,400
+An issuer checks a person once. Only a commitment goes on Midnight
+
+5
+00:00:23,800 --> 00:00:28,900
+Apps get a zero-knowledge yes against their public policy, plus a per-app nullifier
+
+6
+00:00:29,100 --> 00:00:32,951
+The main demo: the Kola KYC registry, also deployed on Midnight Preprod
+
+7
+00:00:33,101 --> 00:00:38,197
+1. The registry admin approves Kumba Verify, a KYC provider, as an issuer
+
+8
+00:00:38,347 --> 00:00:44,485
+2. Kumba Verify checks Manka (28) and Ebai (17) once, and issues credentials. Only commitments go on-chain
+
+9
+00:00:44,635 --> 00:00:50,772
+3. Sawa Exchange publishes a public policy: 18+, CM/GH/KE/NG, sanctions screened in the last 90 days
+
+10
+00:00:50,922 --> 00:00:57,016
+4. Manka proves she meets the policy. Sawa gets a yes and a nullifier, never her birth date
+
+11
+00:00:57,166 --> 00:01:02,251
+5. A second Sawa account from Manka is refused: one person, one account
+
+12
+00:01:02,401 --> 00:01:07,473
+7. Ebai is 17: refused, and Sawa learns nothing about his actual age
+
+13
+00:01:07,623 --> 00:01:12,515
+The public ledger: issuer keys, commitments, policies and nullifiers. No names, no birth dates
+
+14
+00:01:12,666 --> 00:01:17,518
+Beyond finance: the same contract, unchanged, running three registries
+
+15
+00:01:17,668 --> 00:01:23,452
+Each registry approves only its own kind of issuer, so a co-op can never mint an ID check
+
+16
+00:01:23,602 --> 00:01:32,432
+Gaming: Mboa Bet requires 21+, because Cameroon closes betting below civil majority (21)
+
+17
+00:01:32,582 --> 00:01:38,585
+Manka passes. Ebai, 19, is refused: an adult in many countries, but under 21
+
+18
+00:01:38,735 --> 00:01:42,086
+Agriculture: Limbe Cocoa Buyers needs proof of current co-op membership, ahead of EU deforestation rules
+
+19
+00:01:42,236 --> 00:01:48,720
+Fako Cocoa Farmers Union issues; Manka proves. The buyer never sees her name, member number or even her co-op
+
+20
+00:01:48,870 --> 00:01:54,839
+Tabe's good standing was last confirmed 400 days ago: refused until the union renews it
+
+21
+00:01:54,989 --> 00:02:03,966
+Jobs: Mboa Jobs hires certified solar technicians. Buea Technical Institute is in the Skills registry
+
+22
+00:02:04,116 --> 00:02:10,486
+A diploma mill that is not accredited tries to issue: rejected. The forgery never enters the registry
+
+23
+00:02:10,636 --> 00:02:18,174
+One person, three apps, three different nullifiers. Even pooled, their databases do not join
+
+24
+00:02:18,324 --> 00:02:23,975
+Her three credentials stay on her device; the three public registries hold only hashes and counters
+
+25
+00:02:24,325 --> 00:02:28,925
+A real Compact contract on Midnight Preprod, a TypeScript SDK and 43 passing tests
+
+26
+00:02:29,325 --> 00:02:33,925
+The Co-op and Skills registries run in the in-browser simulator for now
+
+27
+00:02:34,325 --> 00:02:39,425
+Proposed model: apps pay per proof, from 150 FCFA, with 40% going to the issuer
+
+28
+00:02:39,825 --> 00:02:44,925
+For regulated finance, Kola ID supports CEMAC third-party reliance rather than avoiding it
+
+29
+00:02:45,325 --> 00:02:53,925
+Go-to-market: one issuer and one app per vertical, starting in Cameroon. Nothing signed yet
+
+30
+00:02:54,325 --> 00:03:00,925
+Kola ID is an early product with a clear route to market. github.com/mbanyadev/kola-id
+

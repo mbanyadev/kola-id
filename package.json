@@ -9,6 +9,7 @@
     "compile": "compact compile contracts/src/kola-id.compact contracts/managed/kola-id",
     "compile:fast": "compact compile --skip-zk contracts/src/kola-id.compact contracts/managed/kola-id",
     "test": "vitest run",
+    "demo:e2e": "node scripts/e2e-story.mjs",
     "demo:dev": "npm run demo:zk && vite apps/demo",
     "demo:build": "npm run demo:zk && vite build apps/demo",
     "typecheck": "tsc -p tsconfig.json",

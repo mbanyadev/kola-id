@@ -9,7 +9,6 @@ import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-p
 import { ledger } from '../../../contracts/managed/kola-id/contract/index.js';
 import { summarizeLedger, todayUtc, type DemoCast, type KolaContract, type KolaProviders } from '../../../sdk/src/chain.js';
 import deployment from '../../../deploy/preview-deployment.json';
-import preprodDeployment from '../../../deploy/preprod-deployment.json';
 
 export const NETWORK_ID = 'preview';
 export const INDEXER = 'https://indexer.preview.midnight.network/api/v4/graphql';
@@ -19,9 +18,6 @@ setNetworkId(NETWORK_ID);
 type Dep = { contractAddress?: string; deployTxId?: string; deployBlock?: number; deployedAt?: string;
   steps: Record<string, { label: string; ok: boolean; txId?: string; block?: number; refused?: string }> };
 const ref = deployment as Dep;
-/** Reference deployment on Preprod (made from Node.js; Preprod's indexer is Blockfrost-only, so it is shown, not queried). */
-const preprod = preprodDeployment as Dep;
-const PREPROD_EXPLORER = 'https://preprod.midnightexplorer.com';
 
 type Log = (t: string, kind?: 'ok' | 'bad' | '') => void;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
@@ -49,58 +45,41 @@ async function readLive(address: string) {
 }
 
 function ledgerTable(l: NonNullable<typeof S.live>) {
-  return `<table>
-    <tr><th>admin</th><td class="mono">${short(l.admin)}</td></tr>
-    <tr><th>issuers</th><td>${l.issuers.map((i) => `<div class="mono">${short(i)}</div>`).join('') || '<span class="muted">none</span>'}</td></tr>
-    <tr><th>credentials</th><td>${l.credentialsIssued} issued, ${l.credentialsRevoked} revoked · root <span class="mono">${short(l.credentialRoot)}</span></td></tr>
-    <tr><th>apps</th><td>${l.apps.map((a) => `<div>${esc(a.appId)}: ${a.verifications} verifications (18+ ≈ ${a.minAgeYearsApprox.toFixed(0)}y, epoch ${a.epoch})</div>`).join('') || '<span class="muted">none</span>'}</td></tr>
-    <tr><th>nullifiers</th><td>${l.nullifiers}</td></tr></table>`;
+  const row = (k: string, v: string) => `<div class="prow"><span>${k}</span><span class="muted">${v}</span></div>`;
+  return `<div class="onchain">
+    ${row('Admin', `<code>${short(l.admin)}</code>`)}
+    ${row('Issuers', l.issuers.map((i) => `<code>${short(i)}</code>`).join(' ') || 'none')}
+    ${row('Credentials', `${l.credentialsIssued} issued, ${l.credentialsRevoked} revoked · root <code>${short(l.credentialRoot)}</code>`)}
+    ${row('Apps', l.apps.map((a) => `${esc(a.appId)}: ${a.verifications} verified (≈${a.minAgeYearsApprox.toFixed(0)}+, epoch ${a.epoch})`).join('<br>') || 'none')}
+    ${row('Nullifiers', String(l.nullifiers))}</div>`;
 }
 
 export function mount(root: HTMLElement, log: Log, rerender: () => void) {
   const wallets = findWallets();
   const steps = Object.entries(ref.steps ?? {});
-  const busy = S.busy ? `<p class="muted">⏳ ${esc(S.busy)}</p>` : '';
-  const ppSteps = Object.entries(preprod.steps ?? {});
-  // The explorer indexes transactions by hash, not by the transaction identifier Midnight.js returns, so link the block.
-  const blockLink = (n?: number) => n ? `<a href="${PREPROD_EXPLORER}/blocks/${n}" target="_blank" rel="noopener">block ${n}</a>` : 'block ?';
-  const txLink = (h?: string) => h ? `<span class="mono">${short(h)}</span>` : '';
+  const busy = S.busy ? `<div class="msg"><span class="spin" style="width:14px;height:14px;border-width:2px;vertical-align:-2px"></span> ${esc(S.busy)}</div>` : '';
+  // The Preprod reference deployment (deploy/preprod-deployment.json) is shown on the Network page itself, in main.ts.
+  const res = (r?: { ok: boolean; text: string }) => r ? `<span class="pill ${r.ok ? 'ok' : 'bad'}">${esc(r.text)}</span>` : '<span class="muted">not run</span>';
   root.innerHTML = `
-    ${preprod.contractAddress ? `<div class="card"><span class="tag">Midnight Preprod · reference deployment</span>
-      <h3>Kola ID is live on Preprod</h3>
-      <p>Contract <a class="mono" href="${PREPROD_EXPLORER}/contracts/${esc(preprod.contractAddress)}" target="_blank" rel="noopener">${esc(preprod.contractAddress)}</a><br>
-        <span class="muted">deployed ${esc(preprod.deployedAt ?? '')} in ${blockLink(preprod.deployBlock)} · tx ${txLink(preprod.deployTxId)}</span></p>
-      ${ppSteps.length ? `<table><tr><th>Story step on Preprod</th><th>Result</th></tr>${ppSteps.map(([, s]) => `<tr><td>${esc(s.label)}</td><td>${s.ok
-        ? `✅ ${blockLink(s.block)} · ${txLink(s.txId)}` : `❌ refused by the proof: ${esc(s.refused ?? '')}`}</td></tr>`).join('')}</table>` : ''}
-      <p class="muted">Deployed from Node.js (<span class="mono">npm run preprod:deploy</span>). Preprod's public indexer is served by Blockfrost and needs a project token, so this page links to the
-        <a href="${PREPROD_EXPLORER}/" target="_blank" rel="noopener">Preprod explorer</a> instead of querying it from your browser.</p>
-    </div>` : ''}
-    <div class="card"><span class="tag">Midnight Preview · reference deployment</span>
-      ${ref.contractAddress ? `<h3>Kola ID is live on Preview</h3>
-        <p>Contract <span class="mono">${ref.contractAddress}</span><br><span class="muted">deployed ${esc(ref.deployedAt ?? '')} in block ${ref.deployBlock ?? '?'} · tx <span class="mono">${short(ref.deployTxId ?? '')}</span></span></p>
-        <table><tr><th>Story step on Preview</th><th>Result</th></tr>${steps.map(([, s]) => `<tr><td>${esc(s.label)}</td><td>${s.ok
-          ? `✅ block ${s.block} · <span class="mono">${short(s.txId ?? '')}</span>` : `❌ refused by the proof: ${esc(s.refused ?? '')}`}</td></tr>`).join('')}</table>
-        <div class="row"><button id="pvRead">Read the live public ledger from the Preview indexer</button></div>
-        ${S.liveFor === ref.contractAddress && S.live ? ledgerTable(S.live) : ''}${S.liveErr ? `<div class="result bad">${esc(S.liveErr)}</div>` : ''}`
-      : `<h3>Reference deployment pending</h3><p class="muted">The Preview deployment of Kola ID has not been published yet. You can still deploy your own below with Lace.</p>`}
-    </div>
-    <div class="card"><span class="tag">Your own Kola ID on Preview · Lace</span>
-      ${S.api ? `<p>Connected to ${esc(S.walletName ?? 'wallet')} as <span class="mono">${short(S.addr ?? '')}</span></p>`
-      : `<p class="muted">Needs the Lace wallet set to <b>Preview</b>, with tDUST (get tNIGHT from the
-          <a href="https://midnight-tmnight-preview.nethermind.dev/" target="_blank" rel="noopener">Preview faucet</a> and let Lace generate tDUST),
-          and a proof server in Lace's settings (local: <span class="mono">docker run -p 6300:6300 midnightntwrk/proof-server:8.1.3</span>).</p>
-        ${wallets.length ? `<div class="row"><label>Private state password (16+ chars, stays in this browser)<input id="pvPw" type="password" autocomplete="new-password"></label>
-          <button id="pvConnect">Connect ${esc(wallets[0].name)}</button></div>`
-        : '<div class="result bad">No Midnight wallet found in this browser. Install Lace and switch it to Preview, then reload.</div>'}`}
-      ${S.api && !S.mine ? `<div class="row"><button id="pvDeploy">Deploy my own Kola ID on Preview</button></div>
-        <p class="muted">Your browser plays every role (admin, Kumba Verify, the apps, Manka and Ebai), each with its own secret. Every step is a real transaction you approve in Lace.</p>` : ''}
-      ${S.mine ? `<p>Your contract: <span class="mono">${S.mine.address}</span></p>
-        <table><tr><th>Step</th><th></th><th>Result</th></tr>${CHAIN_STEP_LIST.map((s, i) => `<tr><td>${i + 1}. ${esc(s.label)}</td>
-          <td><button class="ghost" data-pv="${s.id}">Run</button></td><td>${S.mine!.results[s.id] ? `${S.mine!.results[s.id].ok ? '✅' : '❌'} ${esc(S.mine!.results[s.id].text)}` : ''}</td></tr>`).join('')}</table>
-        <div class="row"><button id="pvLive">Read my contract's public ledger</button></div>
-        ${S.liveFor === S.mine.address && S.live ? ledgerTable(S.live) : ''}` : ''}
-      ${busy}
-    </div>`;
+    ${ref.contractAddress ? `<div class="msg ok">Kola ID is live on Preview at <code>${short(ref.contractAddress)}</code> (block ${ref.deployBlock ?? '?'}).</div>
+      ${steps.map(([, s]) => `<div class="prow"><span class="sdot ${s.ok ? '' : 'bad'}"></span><span>${esc(s.label)}</span><span class="muted">${s.ok ? `block ${s.block}` : `refused: ${esc(s.refused ?? '')}`}</span></div>`).join('')}
+      <button class="btn-sec" id="pvRead">Read the live ledger from the Preview indexer</button>
+      ${S.liveFor === ref.contractAddress && S.live ? ledgerTable(S.live) : ''}${S.liveErr ? `<div class="msg bad">${esc(S.liveErr)}</div>` : ''}` : ''}
+    ${S.api ? `<div class="msg ok">Connected to ${esc(S.walletName ?? 'wallet')} as <code>${short(S.addr ?? '')}</code></div>`
+      : `<p style="margin:0">Run the whole story as real transactions with your own wallet. You need Lace set to <b>Preview</b> with tDUST
+          (get tNIGHT from the <a href="https://midnight-tmnight-preview.nethermind.dev/" target="_blank" rel="noopener">Preview faucet</a>) and a proof server in Lace's settings
+          (local: <code>docker run -p 6300:6300 midnightntwrk/proof-server:8.1.3</code>).</p>
+        ${wallets.length ? `<label class="field">Private state password (16+ characters, stays in this browser)<input id="pvPw" type="password" autocomplete="new-password"></label>
+          <button class="btn" id="pvConnect">Connect ${esc(wallets[0].name)}</button>`
+        : '<div class="msg bad" data-lace="none">No Midnight wallet found in this browser. Install Lace, switch it to Preview, then reload.</div>'}`}
+    ${S.api && !S.mine ? `<button class="btn" id="pvDeploy">Deploy my own Kola ID on Preview</button>
+      <div class="msg">Your browser plays every role (admin, Kumba Verify, the apps, Manka and Ebai), each with its own secret. Every step is a real transaction you approve in Lace.</div>` : ''}
+    ${S.mine ? `<div class="msg ok">Your contract: <code>${esc(S.mine.address)}</code></div>
+      ${CHAIN_STEP_LIST.map((s, i) => `<div class="prow"><span>${i + 1}. ${esc(s.label)}</span><span class="muted">${res(S.mine!.results[s.id])}</span>
+        <button class="btn-ghost" data-pv="${s.id}" style="height:34px">Run</button></div>`).join('')}
+      <button class="btn-sec" id="pvLive">Read my contract's public ledger</button>
+      ${S.liveFor === S.mine.address && S.live ? ledgerTable(S.live) : ''}` : ''}
+    ${busy}`;
 
   const act = (id: string, label: string, fn: () => Promise<void>) => root.querySelector(`#${id}`)?.addEventListener('click', async () => {
     if (S.busy) return;

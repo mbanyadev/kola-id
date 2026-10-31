@@ -56,7 +56,7 @@
       <li>Each app's policy: minimum age, allowed countries, screening freshness, epoch</li><li>Per-app nullifiers and a verification counter (for billing)</li></ul></div>
     <div class="card"><h3 class="bad">Never leaves the holder</h3><ul class="small">
       <li>Name, birth date, country, document</li><li>Which issuer checked her</li><li>Which other apps she uses</li><li>Her holder secret</li></ul></div>
-    <img class="shot" src="img/main-ledger.png" style="width:400px">
+    <img class="shot" src="img/main-ledger.png" style="width:330px;justify-self:end">
   </div>
   <p class="small muted" style="margin-top:22px">In Compact, only what passes through <span class="mono">disclose()</span> becomes public: here the app id, the yes/no eligibility result, the nullifier, Merkle roots, the policy and the date. Never the credential's contents. Right: the demo's public ledger after the full story. Threat model: docs/THREAT_MODEL.md.</p>
   <div class="foot"><span>Mbanya Dev</span><span>4</span></div>
@@ -65,12 +65,12 @@
 <!-- 5 Demo -->
 <section class="slide" style="padding-right:40px">
   <p class="kicker">Demo · mbanyadev.github.io/kola-id</p>
-  <div style="display:grid;grid-template-columns:420px 1fr;gap:30px">
+  <div style="display:grid;grid-template-columns:420px minmax(0,1fr);gap:30px">
     <div><h2 style="font-size:38px">One person, three apps</h2>
       <p class="small">Manka passes a <b>betting</b> app's 21+ check, a <b>cocoa buyer</b>'s co-op membership check and a <b>job platform</b>'s certificate check, each with a different nullifier.</p>
       <p class="small"><span class="bad">Refused:</span> Ebai (19) at the betting app, Tabe (lapsed member) at the buyer, a fake diploma mill at issuance.</p>
       <p class="small">The real compiled circuits run in the browser. The KYC story is also deployed and replayed on <b>Preprod</b>, with every transaction on the explorer.</p></div>
-    <div><img class="shot" src="img/uc-gaming.png" style="width:720px"><img class="shot" src="img/uc-nullifiers.png" style="width:720px;margin-top:14px"></div>
+    <div><img class="shot" src="img/uc-cards.png" style="width:100%;margin-top:8px"><img class="shot" src="img/uc-nullifiers.png" style="width:100%;margin-top:12px"></div>
   </div>
   <div class="foot"><span>Mbanya Dev</span><span>5</span></div>
 </section>

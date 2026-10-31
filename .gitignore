@@ -54,3 +54,4 @@ private/
 wallet-state-*
 apps/demo/public/zk/
 *.token
+design/
